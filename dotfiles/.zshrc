@@ -12,7 +12,7 @@ unset hup
 setenv() { export $1=$2 }  # csh compatibility
 
 # terminal specific stuff
-if [[ $TERM == "xterm" || $TERM == "rxvt" ]]; then
+if [[ $TERM == "xterm" || $TERM == "xterm-256color" || $TERM == "rxvt" ]]; then
     # Change title when switching directories
     chpwd () { print -Pn "]0;<Z> $USER@$HOST: [%~]" }
     PROMPT="> "
@@ -20,6 +20,7 @@ if [[ $TERM == "xterm" || $TERM == "rxvt" ]]; then
 elif [[ $EMACS = t ]]; then
     unsetopt zle
     PROMPT="> "
+    export PAGER=cat
 else 
     PROMPT="> "
 
@@ -91,7 +92,11 @@ alias lprdj="gs -DSAFER -sDEVICE=ijs -sIjsServer=hpijs -sDeviceManufacturer=HEWL
 alias dov-pilot-bu="pilot-xfer -e /home/dov/pilot/exclude-list -u /home/dov/pilot/backup; memos -s /home/dov/pilot/memos -f /home/dov/pilot/backup/MemoDB.pdb"
 alias firebird="/usr/local/MozillaFirebird/MozillaFirebird"
 alias ps2pdf="ps2pdf -sPAPERSIZE=a4 "
-alias wdx="echo -n 'X <= '; pwd; pwd | perl -pe 'chomp' | xclip "
+alias wdx="echo -n 'X <= '; pwd; pwd | perl -pe 'chomp' | xclip ; pwd | perl -pe 'chomp' | xclip -selection clip"
+alias toxclip="echo $*|xclip"
+alias aaaa='setxkbmap us'
+alias dvorak='xkbcomp ~/.xkbmap $DISPLAY'
+alias sudo='sudo env PATH=$PATH'
 
 # solaris stuff
 if [[ `uname -s` == Solaris ]]; then
@@ -297,7 +302,7 @@ export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
 export CVS_RSH=ssh
 export ALGLIBS=/home/dov/orbotech/alglibs
 export SVN_EDITOR=vim
-export PYTHONPATH=/usr/local/lib/python2.5/site-packages
+export PYTHONPATH=/usr/local/lib/python2.7/site-packages:/usr/local/lib64/python2.7/site-packages:
 export _JAVA_OPTIONS="-Dawt.useSystemAAFontSettings=on"
 alias mntsec='sudo /sbin/modprobe cryptoloop; sudo /sbin/modprobe blowfish; sudo losetup -e blowfish /dev/loop0 /space1/secure; sudo mount -t ext2 /dev/loop0 /mnt/loop'
 alias umntsec='sudo umount /dev/loop0; sudo losetup -d /dev/loop0; sudo sync'
