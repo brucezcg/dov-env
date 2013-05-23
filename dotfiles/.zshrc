@@ -11,6 +11,12 @@ unset hup
 # Shell functions
 setenv() { export $1=$2 }  # csh compatibility
 
+# Speed up interactive work - See http://www.webupd8.org/2010/11/alternative-to-200-lines-kernel-patch.html
+#if [ "$PS1" ] ; then  
+#    mkdir -m 0700 /sys/fs/cgroup/cpu/user/$$
+#    echo $$ > /sys/fs/cgroup/cpu/user/$$/tasks
+#fi
+
 # terminal specific stuff
 if [[ $TERM == "xterm" || $TERM == "xterm-256color" || $TERM == "rxvt" ]]; then
     # Change title when switching directories
@@ -244,7 +250,7 @@ path=(/usr/local/bin
 # environment variables
 if [[ `uname -s` == Linux ]] {
     #setenv PERLVER `perl -MConfig -e 'print $Config{api_versionstring}'`
-    setenv PERLVER "5.10.0"
+    setenv PERLVER "5.12.0"
     setenv PERLOS `perl -MConfig -e 'print $Config{archname}'`
     setenv PERL5LIB /usr/local/lib/perl5/${PERLVER}:/usr/local/lib/perl5/${PERLVER}/${PERLOS}:/usr/local/lib/perl5/site_perl/${PERLVER}:/usr/local/lib/perl5/site_perl/${PERLVER}/${PERLOS}:/usr/lib/perl5/vendor_perl/${PERLVER}:/usr/lib/vendor_perl/${PERLVER}/${PERLOS}:/usr/lib/vendor_perl/perl5/site_perl/${PERLVER}:/usr/lib/vendor_perl/perl5/site_perl/${PERLVER}/${PERLOS}:/nmr/dov/Projects/Lib/perl:/nmr/dov/Projects/Lib/perl/$OS/$PERLVER
     
@@ -269,6 +275,13 @@ gtk-head-env() {
     export LD_LIBRARY_PATH=/opt/gtk-head/lib
     export PATH=/opt/gtk-head/bin:$PATH
     export GTK2_RC_FILES=/home/dov/.gtkrc-2.0.head
+}
+pub-dev-env() {
+    export PKG_CONFIG_PATH=/usr/local/public-dev/lib/pkgconfig 
+    export LD_LIBRARY_PATH=/usr/local/public-dev/lib:$LD_LIBRARY_PATH 
+    export PATH=/usr/local/public-dev/bin:$PATH 
+    export CPPFLAGS="-I/usr/local/public-dev/include"
+    export LDFLAGS="-L/usr/local/public-dev/lib"
 }
 gtk210-env() {
     export PKG_CONFIG_PATH=/opt/gtk-2.10/lib/pkgconfig:$PKG_CONFIG_PATH 
@@ -304,6 +317,7 @@ export ALGLIBS=/home/dov/orbotech/alglibs
 export SVN_EDITOR=vim
 export PYTHONPATH=/usr/local/lib/python2.7/site-packages:/usr/local/lib64/python2.7/site-packages:
 export _JAVA_OPTIONS="-Dawt.useSystemAAFontSettings=on"
+export DCMDICTPATH=/usr/local/dicom/lib/dicom.dic
 alias mntsec='sudo /sbin/modprobe cryptoloop; sudo /sbin/modprobe blowfish; sudo losetup -e blowfish /dev/loop0 /space1/secure; sudo mount -t ext2 /dev/loop0 /mnt/loop'
 alias umntsec='sudo umount /dev/loop0; sudo losetup -d /dev/loop0; sudo sync'
 setenv PERLVER `perl -MConfig -e 'print $Config{version}'`
