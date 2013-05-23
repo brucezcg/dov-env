@@ -67,6 +67,11 @@ alias lsd='ls -ld *(-/DN)'
 alias lsa='ls -ld .*'
 alias ls='ls -F --color=auto'
 alias visit="/usr/local.local/bin/visit"
+alias less='less -R'
+grel() { grep --color=always $* | less -R }
+ackl() { ack --color $* | less -R }
+gitgrep() { grep --color=always $* "`git ls-files`" | less -R }
+qtpylab() {  /usr/local/bin/ipython qtconsole --pylab=inline & }
 
 # Some single characters. Is this too wild?
 alias -g M='|more'
@@ -277,11 +282,11 @@ gtk-head-env() {
     export GTK2_RC_FILES=/home/dov/.gtkrc-2.0.head
 }
 pub-dev-env() {
-    export PKG_CONFIG_PATH=/usr/local/public-dev/lib/pkgconfig 
-    export LD_LIBRARY_PATH=/usr/local/public-dev/lib:$LD_LIBRARY_PATH 
-    export PATH=/usr/local/public-dev/bin:$PATH 
-    export CPPFLAGS="-I/usr/local/public-dev/include"
-    export LDFLAGS="-L/usr/local/public-dev/lib"
+    export PKG_CONFIG_PATH=/usr/local/pub-dev/lib/pkgconfig 
+    export LD_LIBRARY_PATH=/usr/local/pub-dev/lib:$LD_LIBRARY_PATH 
+    export PATH=/usr/local/pub-dev/bin:$PATH 
+    export CPPFLAGS="-I/usr/local/pub-dev/include"
+    export LDFLAGS="-L/usr/local/pub-dev/lib"
 }
 gtk210-env() {
     export PKG_CONFIG_PATH=/opt/gtk-2.10/lib/pkgconfig:$PKG_CONFIG_PATH 
@@ -298,6 +303,14 @@ mingw32env() {
     export PROGSUFFIX=".exe"
     export PREFIX="/usr/local/mingw32"
 }
+
+# Display an image from a webcam on the N900
+vcam() {
+  sudo n900-up.sh
+  zap -9 -ni -9 gst-launch
+  ssh groma "env DISPLAY=:0 ssh -X dov@usb gst-launch v4l2src device=/dev/video0 ! 'video/x-raw-yuv,width=320,height=240,framerate=25/1' ! videobalance brightness=0.25 ! aspectratiocrop aspect-ratio=16/9 ! videoflip method=horizontal-flip ! xvimagesink"
+}
+
 
 # Weizmann specific stuff
 if [[ $HOST == "echo" || $HOST == "mega" ]]; then
