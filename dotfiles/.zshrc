@@ -269,24 +269,23 @@ setenv PILOTPORT /etc/udev/devices/ttyUSB1
 setenv GS_LIB /usr/share/ghostscript/fonts
 setenv PGPLOT_DIR /usr/local/pgplot
 setenv PGPLOT_DEV      /xwindow
-cvsgnome() {
-    export CVSROOT=':pserver:dov@cvs.gnome.org:/cvs/gnome'
-}
-cvsimagic() {
-    export CVSROOT=':ext:dov@imagic.weizmann.ac.il:/home/dov/cvs'
-}
 gtk-head-env() {
     export PKG_CONFIG_PATH=/opt/gtk-head/lib/pkgconfig:$PKG_CONFIG_PATH 
     export LD_LIBRARY_PATH=/opt/gtk-head/lib
     export PATH=/opt/gtk-head/bin:$PATH
     export GTK2_RC_FILES=/home/dov/.gtkrc-2.0.head
 }
+
+# Set up a public development enviroment. Works e.g. for gimp and gegl.
 pub-dev-env() {
     export PKG_CONFIG_PATH=/usr/local/pub-dev/lib/pkgconfig 
     export LD_LIBRARY_PATH=/usr/local/pub-dev/lib:$LD_LIBRARY_PATH 
     export PATH=/usr/local/pub-dev/bin:$PATH 
     export CPPFLAGS="-I/usr/local/pub-dev/include"
     export LDFLAGS="-L/usr/local/pub-dev/lib"
+    export ACLOCAL_FLAGS="-I /usr/local/public-dev/share/aclocal -I /usr/share/aclocal"
+    export PYTHONPATH=/usr/local/public-dev/lib/python2.7/site-packages:$PYTHONPATH
+    export GI_TYPELIB_PATH=/usr/local/public-dev/lib/girepository-1.0
 }
 gtk210-env() {
     export PKG_CONFIG_PATH=/opt/gtk-2.10/lib/pkgconfig:$PKG_CONFIG_PATH 
