@@ -7,6 +7,7 @@ setopt complete_in_word
 setopt multios
 setopt hist_ignore_dups
 unset hup
+stty -ixon
 
 # Shell functions
 setenv() { export $1=$2 }  # csh compatibility
@@ -99,9 +100,6 @@ alias pilot-mail pilot-mail /dev/pilot -f dov@imagic.weizmann.ac.il -k keep -s m
 alias umask-g+w='umask 002'
 alias umask-default='umask 022'
 alias umask-g-w='umask 022'
-alias lprdj="gs -DSAFER -sDEVICE=ijs -sIjsServer=hpijs -sDeviceManufacturer=HEWLETT-PACKARD -sDeviceModel='deskjet 3420' -sIjsParams='Quality:Quality=0,Quality:ColorMode=0,Quality:PenSet=0' -DIjsUseOutputFD -sOutputFile=/dev/usb/lp0 -DNOPAUSE --"
-alias dov-pilot-bu="pilot-xfer -e /home/dov/pilot/exclude-list -u /home/dov/pilot/backup; memos -s /home/dov/pilot/memos -f /home/dov/pilot/backup/MemoDB.pdb"
-alias firebird="/usr/local/MozillaFirebird/MozillaFirebird"
 alias ps2pdf="ps2pdf -sPAPERSIZE=a4 "
 alias wdx="echo -n 'X <= '; pwd; pwd | perl -pe 'chomp' | xclip ; pwd | perl -pe 'chomp' | xclip -selection clip"
 alias toxclip="echo $*|xclip"
@@ -237,14 +235,14 @@ bindkey '[3D' back-to-whitespace
 bindkey '[3C' forward-to-whitespace
 
 # path
-path=(/usr/local/bin 
-      /usr/java/jre1.5.0_06/bin
+path=(/usr/local/forte4j/teamware/bin
+      /usr/local/bin 
+      /usr/java/jre1.6.0_01/bin
       /usr/X11R6/bin 
       $HOME/scripts
       $HOME/Scripts 
       $HOME/scripts 
       $HOME/bin
-      /usr/X11R6/bin
       /usr/bin
       /bin
       /usr/sbin
@@ -278,11 +276,11 @@ gtk-head-env() {
 
 # Set up a public development enviroment. Works e.g. for gimp and gegl.
 pub-dev-env() {
-    export PKG_CONFIG_PATH=/usr/local/pub-dev/lib/pkgconfig 
-    export LD_LIBRARY_PATH=/usr/local/pub-dev/lib:$LD_LIBRARY_PATH 
-    export PATH=/usr/local/pub-dev/bin:$PATH 
-    export CPPFLAGS="-I/usr/local/pub-dev/include"
-    export LDFLAGS="-L/usr/local/pub-dev/lib"
+    export PKG_CONFIG_PATH=/usr/local/public-dev/lib/pkgconfig 
+    export LD_LIBRARY_PATH=/usr/local/public-dev/lib:$LD_LIBRARY_PATH 
+    export PATH=/usr/local/public-dev/bin:$PATH 
+    export CPPFLAGS="-I/usr/local/public-dev/include"
+    export LDFLAGS="-L/usr/local/public-dev/lib"
     export ACLOCAL_FLAGS="-I /usr/local/public-dev/share/aclocal -I /usr/share/aclocal"
     export PYTHONPATH=/usr/local/public-dev/lib/python2.7/site-packages:$PYTHONPATH
     export GI_TYPELIB_PATH=/usr/local/public-dev/lib/girepository-1.0
@@ -293,14 +291,22 @@ gtk210-env() {
     export PATH=/opt/gtk-2.10/bin:$PATH
 }
 mingw32env() {
-    export CC='/usr/local/mingw32/bin/mingw32-gcc'
-    export CXX='/usr/local/mingw32/bin/mingw32-g++'
-    export AR='/usr/local/mingw32/bin/mingw32-ar'
-    export RANLIB='/usr/local/mingw32/bin/mingw32-ranlib'
-    export PKGCONFIG="PKG_CONFIG_PATH=/usr/local/mingw32/lib/pkgconfig pkg-config"
+    TARGET=mingw32
+    export PREFIX="/usr/local/mingw32"
+    export CC="i686-w64-mingw32-gcc -mms-bitfields"
+    export CXX="i686-w64-mingw32-g++ -mms-bitfields"
+    export AR=i686-w64-mingw32-ar
+    export RANLIB=i686-w64-mingw32-ranlib
+    export CFLAGS="-O2 -march=i586 -mms-bitfields"
+    export CXXFLAGS="-O2 -march=i586 -mms-bitfields"
+    export PKG_CONFIG_PATH=$PREFIX/$TARGET/lib/pkgconfig
+    export PATH=$PREFIX/bin:$PREFIX/$TARGET/bin:/bin:/usr/bin
+    export LD_LIBRARY_PATH=$PREFIX/$TARGET/lib
+    export LDFLAGS=-L$PREFIX/$TARGET/lib
+    export OBJDUMP=$PREFIX/bin/mingw32-objdump
+    export HOST_CC=/usr/bin/gcc
     export OBJSUFFIX=".obj"
     export PROGSUFFIX=".exe"
-    export PREFIX="/usr/local/mingw32"
 }
 
 # Display an image from a webcam on the N900
@@ -319,22 +325,21 @@ if [[ $HOST == "echo" || $HOST == "mega" ]]; then
 fi
 
 # Hadassa Group development
-export DCMDICTPATH=/usr/local/lib/dicom.dic
 
 export GDK_USE_XFT=1
-export TEXINPUTS=.:/usr/local/share/texmf/tex//:/usr/share/texmf/tex//
+export TEXINPUTS=.:/usr/local/share/texmf/tex//:/usr/share/texmf/tex//::/usr/share/texmf/texlive//
 export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
 export CVS_RSH=ssh
 export ALGLIBS=/home/dov/orbotech/alglibs
 export SVN_EDITOR=vim
 export PYTHONPATH=/usr/local/lib/python2.7/site-packages:/usr/local/lib64/python2.7/site-packages:
 export _JAVA_OPTIONS="-Dawt.useSystemAAFontSettings=on"
-export DCMDICTPATH=/usr/local/dicom/lib/dicom.dic
 alias mntsec='sudo /sbin/modprobe cryptoloop; sudo /sbin/modprobe blowfish; sudo losetup -e blowfish /dev/loop0 /space1/secure; sudo mount -t ext2 /dev/loop0 /mnt/loop'
 alias umntsec='sudo umount /dev/loop0; sudo losetup -d /dev/loop0; sudo sync'
 setenv PERLVER `perl -MConfig -e 'print $Config{version}'`
 setenv PERLOS `perl -MConfig -e 'print $Config{archname}'`
 setenv PERL5LIB /usr/local/lib/perl5/${PERLVER}:/usr/local/lib/perl5/${PERLVER}/${PERLOS}:/usr/local/lib/perl5/site_perl/${PERLVER}:/usr/local/lib/perl5/site_perl/${PERLVER}/${PERLOS}:/usr/local.local/lib/perl5/${PERLVER}:/usr/local.local/lib/perl5/${PERLVER}/${PERLOS}:/usr/local.local/lib/perl5/site_perl/${PERLVER}:/usr/local.local/lib/perl5/site_perl/${PERLVER}/${PERLOS}:/usr/lib/perl5/vendor_perl/${PERLVER}:/usr/lib/vendor_perl/${PERLVER}/${PERLOS}:/usr/lib/vendor_perl/perl5/site_perl/${PERLVER}:/usr/lib/vendor_perl/perl5/site_perl/${PERLVER}/${PERLOS}:/nmr/dov/Projects/Lib/perl:/nmr/dov/Projects/Lib/perl/$OS/$PERLVER
+export LESSCHARSET=utf-8
 
 # Make perl stop complaining
 unset LANG
@@ -345,3 +350,17 @@ setenv LC_ALL_C
 #zle-toggle-mouse
 #<Esc>m to toggle the mouse in emacs mode
 #bindkey -M emacs '\em' zle-toggle-mouse
+alias aaaa="setxkbmap en_US"
+alias dvorak="xkbcomp ~/.xkbmap $DISPLAY"
+
+alias samiam=/usr/local/samiam/runsamiam 
+export ANDROID_EMULATOR_FORCE_32BIT=1
+export PATH=/space/android-sdk-linux_x86/platform-tools:$PATH
+
+function -K adblist { reply=(`adb shell ls -Fd $1\*|adblsf`) } 
+compctl -K adblist adb
+
+# Go support
+export GOPATH=~/go
+export PATH=$PATH:$GOPATH/bin
+
