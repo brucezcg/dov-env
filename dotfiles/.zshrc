@@ -1,3 +1,5 @@
+# -*- coding: raw-text -*-
+
 # settings
 setopt extendedglob autolist listtypes
 HISTSIZE=10000
@@ -333,13 +335,16 @@ export CVS_RSH=ssh
 export ALGLIBS=/home/dov/orbotech/alglibs
 export SVN_EDITOR=vim
 export PYTHONPATH=/usr/local/lib/python2.7/site-packages:/usr/local/lib64/python2.7/site-packages:
-export _JAVA_OPTIONS="-Dawt.useSystemAAFontSettings=on"
+#export _JAVA_OPTIONS="-Dawt.useSystemAAFontSettings=on"
 alias mntsec='sudo /sbin/modprobe cryptoloop; sudo /sbin/modprobe blowfish; sudo losetup -e blowfish /dev/loop0 /space1/secure; sudo mount -t ext2 /dev/loop0 /mnt/loop'
 alias umntsec='sudo umount /dev/loop0; sudo losetup -d /dev/loop0; sudo sync'
 setenv PERLVER `perl -MConfig -e 'print $Config{version}'`
 setenv PERLOS `perl -MConfig -e 'print $Config{archname}'`
 setenv PERL5LIB /usr/local/lib/perl5/${PERLVER}:/usr/local/lib/perl5/${PERLVER}/${PERLOS}:/usr/local/lib/perl5/site_perl/${PERLVER}:/usr/local/lib/perl5/site_perl/${PERLVER}/${PERLOS}:/usr/local.local/lib/perl5/${PERLVER}:/usr/local.local/lib/perl5/${PERLVER}/${PERLOS}:/usr/local.local/lib/perl5/site_perl/${PERLVER}:/usr/local.local/lib/perl5/site_perl/${PERLVER}/${PERLOS}:/usr/lib/perl5/vendor_perl/${PERLVER}:/usr/lib/vendor_perl/${PERLVER}/${PERLOS}:/usr/lib/vendor_perl/perl5/site_perl/${PERLVER}:/usr/lib/vendor_perl/perl5/site_perl/${PERLVER}/${PERLOS}:/nmr/dov/Projects/Lib/perl:/nmr/dov/Projects/Lib/perl/$OS/$PERLVER
 export LESSCHARSET=utf-8
+
+# Configure with debugging
+alias configuredebug='env CPPFLAGS=-DDEBUG CFLAGS="-g -O0" CXXFLAGS="-g -O0" ./configure'
 
 # Make perl stop complaining
 unset LANG
