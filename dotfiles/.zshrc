@@ -199,8 +199,8 @@ toggle-slash-in-word () {
 rot270() { jpegtran -rotate 270 $1 > $1.tmp; mv $1.tmp $1 }
 rot90() { jpegtran -rotate 90 $1 > $1.tmp; mv $1.tmp $1 }
 
-# transfer routines
-toxfer() { scp $* imagic.weizmann.ac.il:~dov/public_html/xfer }
+# misc functions
+xdump() { xxd -g 1 $* | less }
 
 # Create widgets from functions that we want to bind
 zle -N copy-last-to-whitespace
