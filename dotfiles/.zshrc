@@ -26,7 +26,7 @@ if [[ $TERM == "xterm" || $TERM == "xterm-256color" || $TERM == "rxvt" ]]; then
     chpwd () { print -Pn "]0;<Z> $USER@$HOST: [%~]" }
     PROMPT="> "
     alias ls="ls -F --color=auto"
-elif [[ $EMACS = t ]]; then
+elif [[ -n $INSIDE_EMACS ]]; then
     unsetopt zle
     PROMPT="> "
     export PAGER=cat
