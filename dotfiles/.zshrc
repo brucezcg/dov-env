@@ -1,4 +1,8 @@
-# -*- coding: raw-text -*-
+# Oh my 
+export ZSH=/home/dov/git/dov-env/zsh/oh-my-zsh
+plugins=(git)
+DISABLE_AUTO_TITLE="true"
+source $ZSH/oh-my-zsh.sh
 
 # settings
 setopt extendedglob autolist listtypes
@@ -20,10 +24,16 @@ setenv() { export $1=$2 }  # csh compatibility
 #    echo $$ > /sys/fs/cgroup/cpu/user/$$/tasks
 #fi
 
-# terminal specific stuff
-if [[ $TERM == "xterm" || $TERM == "xterm-256color" || $TERM == "rxvt" ]]; then
+if [[ $TERM == "xterm" || $TERM == "xterm-256color" || $TERM == "rxvt" || $TERM == "screen" ]]; then
     # Change title when switching directories
+#    chpwd () { print -Pn "]0;<Z> $USER@$HOST: [%~]" }
     chpwd () { print -Pn "]0;<Z> $USER@$HOST: [%~]" }
+    PROMPT="> "
+    PS1="> "
+    alias ls="ls -F --color=auto"
+elif [[ $TERM == "screen-256color"  ]]; then
+    # Change title when switching directories
+    chpwd () { print -Pn "\ePtmux;\e\e]0;<Z> $USER@$HOST: [%~]\a\e\\" }
     PROMPT="> "
     alias ls="ls -F --color=auto"
 elif [[ -n $INSIDE_EMACS ]]; then
@@ -38,12 +48,95 @@ else
     fi
 fi
 
+if [[ "$TERM" == "dumb" ]]
+then
+  unsetopt zle
+  unsetopt prompt_cr
+  unsetopt prompt_subst
+#  unfunction precmd
+#  unfunction preexec
+  PS1='$ '
+fi
+
 # stty
 stty intr 
 stty kill 
 stty erase 
 stty susp 
 stty -istrip
+
+: ${TERM_TITLE_SET_MULTIPLEXER:=1}
+
+function term_set_title() {
+	emulate -L zsh
+	local term_is_known=0 term_is_multi=0
+	if [[ \
+		$TERM == rxvt-unicode*
+		|| $TERM == xterm*
+		|| ! -z $TMUX
+	]] then
+		term_is_known=1
+	fi
+	if [[ ! -z $TMUX ]] then
+		term_is_multi=1
+	fi
+	if [[ $term_is_known -ne 1 ]] then
+		return
+	fi
+	printf '\033]0;%s\007' ${1//[^[:print:]]/}
+	if [[ \
+		$TERM_TITLE_SET_MULTIPLEXER -eq 1
+		&& $term_is_multi -eq 1
+	]] then
+		printf '\033k%s\033\\' ${1//[^[:print:]]/}
+	fi
+}
+
+function term_title_get_command() {
+	emulate -L zsh
+	local job_text job_key
+	typeset -g RETURN_COMMAND
+	RETURN_COMMAND=$1
+	# Since ~4.3.5, patch:
+	# "users/11818: allow non-numeric keys for job status parameters"
+	# it is possible to use the `fg ...` or `%...` description as a key
+	# in $jobtexts.
+	case $1 in
+		%*) job_key=$1 ;;
+		fg) job_key=%+ ;;
+		fg*) job_key=${(Q)${(z)1}[2,-1]} ;;
+		*) job_key='' ;;
+	esac
+	if [[ -z $job_key ]] then
+		# not a "job to foreground" command - use it as is
+		return
+	fi
+	job_text=${jobtexts[$job_key]} 2> /dev/null
+	if [[ -z $job_text ]] then
+		# job lookup failed - use the original command
+		return
+	fi
+	RETURN_COMMAND=$job_text
+}
+
+function term_title_precmd() {
+	emulate -L zsh
+	local cmd='zsh'
+	local dir='%~'
+	term_set_title '<'$USER@$HOST'>'\ $cmd:${(%)dir}
+}
+
+function term_title_preexec() {
+	emulate -L zsh
+	term_title_get_command $1
+	local cmd=$RETURN_COMMAND
+	local dir='%~'
+	term_set_title '<'$USER@$HOST'>'\ $cmd:${(%)dir}
+}
+
+autoload -Uz add-zsh-hook
+add-zsh-hook precmd term_title_precmd
+add-zsh-hook preexec term_title_preexec
 
 
 # Make the title change after each command has been completed
@@ -75,6 +168,7 @@ grel() { grep --color=always $* | less -R }
 ackl() { ack --color $* | less -R }
 gitgrep() { grep --color=always $* "`git ls-files`" | less -R }
 qtpylab() {  /usr/local/bin/ipython qtconsole --pylab=inline & }
+toxclip() { echo -n $*| perl -ne 'chomp; print' | xclip }
 
 # Some single characters. Is this too wild?
 alias -g M='|more'
@@ -104,10 +198,11 @@ alias umask-default='umask 022'
 alias umask-g-w='umask 022'
 alias ps2pdf="ps2pdf -sPAPERSIZE=a4 "
 alias wdx="echo -n 'X <= '; pwd; pwd | perl -pe 'chomp' | xclip ; pwd | perl -pe 'chomp' | xclip -selection clip"
-alias toxclip="echo $*|xclip"
 alias aaaa='setxkbmap us'
-alias dvorak='xkbcomp ~/.xkbmap $DISPLAY'
+alias dvorak='xkbcomp -w0 ~/.xkbmap $DISPLAY; xset r rate 200 30'
+alias dddd='xkbcomp -w0  ~/.xkbmap $DISPLAY; xset r rate 200 30'
 alias sudo='sudo env PATH=$PATH'
+alias mount-prealpha='sudo mount //prealpha/d /mnt/prealpha/d -o user=machine,passw='Amag432!',dir_mode=0777,file_mode=0777'
 
 # solaris stuff
 if [[ `uname -s` == Solaris ]]; then
@@ -199,8 +294,8 @@ toggle-slash-in-word () {
 rot270() { jpegtran -rotate 270 $1 > $1.tmp; mv $1.tmp $1 }
 rot90() { jpegtran -rotate 90 $1 > $1.tmp; mv $1.tmp $1 }
 
-# misc functions
-xdump() { xxd -g 1 $* | less }
+# transfer routines
+toxfer() { scp $* imagic.weizmann.ac.il:~dov/public_html/xfer }
 
 # Create widgets from functions that we want to bind
 zle -N copy-last-to-whitespace
@@ -213,6 +308,7 @@ bindkey -e
 bindkey "^[[a" forward-word    
 bindkey "^[[b" backward-word   
 bindkey "^[[c" backward-kill-word
+# The following should match the definition in .Xdefaults
 bindkey "^[[1;2C" backward-kill-word
 bindkey "^[[7;5~" backward-kill-word
 bindkey "^[[f" undo
@@ -238,20 +334,51 @@ bindkey '\M-F' forward-to-whitespace
 bindkey '[3D' back-to-whitespace
 bindkey '[3C' forward-to-whitespace
 
+# clipboard support
+x-copy-region-as-kill () {
+  zle copy-region-as-kill
+  print -rn $CUTBUFFER | xsel -i
+}
+zle -N x-copy-region-as-kill
+x-kill-end-of-line () {
+  zle kill-line
+  print -rn $CUTBUFFER | xsel -i
+}
+zle -N x-kill-end-of-line
+
+x-kill-region () {
+  zle kill-region
+  print -rn $CUTBUFFER | xsel -i
+}
+zle -N x-kill-region
+x-yank () {
+  CUTBUFFER=$(xsel -o </dev/null )
+  zle yank
+}
+zle -N x-yank
+bindkey -e '\eW' x-copy-region-as-kill
+bindkey -e '^W' x-kill-region
+bindkey -e '^Y' x-yank
+bindkey -e '^k' x-kill-end-of-line
+
 # path
-path=(/usr/local/forte4j/teamware/bin
-      /usr/local/bin 
-      /usr/java/jre1.6.0_01/bin
+path=(/usr/local/bin 
+      /usr/java/jre1.5.0_06/bin
       /usr/X11R6/bin 
       $HOME/scripts
       $HOME/Scripts 
-      $HOME/scripts 
+      $HOME/hd/scripts 
       $HOME/bin
+      $HOME/hd/bin
+      $HOME/go/bin
+      /usr/X11R6/bin
       /usr/bin
       /bin
       /usr/sbin
       /sbin
-      /usr/local/matlab/bin/
+      /space/dov/android/android-sdk-linux/platform-tools
+      /home/dov/hd/bin/adb
+      /usr/lib64/openmpi/bin/
       )
 
 # environment variables
@@ -259,9 +386,9 @@ if [[ `uname -s` == Linux ]] {
     #setenv PERLVER `perl -MConfig -e 'print $Config{api_versionstring}'`
     setenv PERLVER "5.12.0"
     setenv PERLOS `perl -MConfig -e 'print $Config{archname}'`
-    setenv PERL5LIB /usr/local/lib/perl5/${PERLVER}:/usr/local/lib/perl5/${PERLVER}/${PERLOS}:/usr/local/lib/perl5/site_perl/${PERLVER}:/usr/local/lib/perl5/site_perl/${PERLVER}/${PERLOS}:/usr/lib/perl5/vendor_perl/${PERLVER}:/usr/lib/vendor_perl/${PERLVER}/${PERLOS}:/usr/lib/vendor_perl/perl5/site_perl/${PERLVER}:/usr/lib/vendor_perl/perl5/site_perl/${PERLVER}/${PERLOS}:/nmr/dov/Projects/Lib/perl:/nmr/dov/Projects/Lib/perl/$OS/$PERLVER
+    setenv PERL5LIB /usr/local/lib/perl5:/usr/local/lib/perl5/${PERLVER}:/usr/local/lib/perl5/${PERLVER}/${PERLOS}:/usr/local/lib/perl5/site_perl/${PERLVER}:/usr/local/lib/perl5/site_perl/${PERLVER}/${PERLOS}:/usr/lib/perl5/vendor_perl/${PERLVER}:/usr/lib/vendor_perl/${PERLVER}/${PERLOS}:/usr/lib/vendor_perl/perl5/site_perl/${PERLVER}:/usr/lib/vendor_perl/perl5/site_perl/${PERLVER}/${PERLOS}:/nmr/dov/Projects/Lib/perl:/nmr/dov/Projects/Lib/perl/$OS/$PERLVER
     
-    setenv QTDIR /usr/lib/qt4
+    setenv QTDIR /usr
 }
 setenv XMCD_LIBDIR /usr/X11R6/lib/X11/xmcd
 setenv OS linux_i386
@@ -280,11 +407,11 @@ gtk-head-env() {
 
 # Set up a public development enviroment. Works e.g. for gimp and gegl.
 pub-dev-env() {
-    export PKG_CONFIG_PATH=/usr/local/public-dev/lib/pkgconfig 
-    export LD_LIBRARY_PATH=/usr/local/public-dev/lib:$LD_LIBRARY_PATH 
-    export PATH=/usr/local/public-dev/bin:$PATH 
-    export CPPFLAGS="-I/usr/local/public-dev/include"
-    export LDFLAGS="-L/usr/local/public-dev/lib"
+    export PKG_CONFIG_PATH=/usr/local/pub-dev/lib/pkgconfig 
+    export LD_LIBRARY_PATH=/usr/local/pub-dev/lib:$LD_LIBRARY_PATH 
+    export PATH=/usr/local/pub-dev/bin:$PATH 
+    export CPPFLAGS="-I/usr/local/pub-dev/include"
+    export LDFLAGS="-L/usr/local/pub-dev/lib"
     export ACLOCAL_FLAGS="-I /usr/local/public-dev/share/aclocal -I /usr/share/aclocal"
     export PYTHONPATH=/usr/local/public-dev/lib/python2.7/site-packages:$PYTHONPATH
     export GI_TYPELIB_PATH=/usr/local/public-dev/lib/girepository-1.0
@@ -295,22 +422,24 @@ gtk210-env() {
     export PATH=/opt/gtk-2.10/bin:$PATH
 }
 mingw32env() {
-    TARGET=mingw32
-    export PREFIX="/usr/local/mingw32"
-    export CC="i686-w64-mingw32-gcc -mms-bitfields"
-    export CXX="i686-w64-mingw32-g++ -mms-bitfields"
-    export AR=i686-w64-mingw32-ar
-    export RANLIB=i686-w64-mingw32-ranlib
-    export CFLAGS="-O2 -march=i586 -mms-bitfields"
-    export CXXFLAGS="-O2 -march=i586 -mms-bitfields"
-    export PKG_CONFIG_PATH=$PREFIX/$TARGET/lib/pkgconfig
-    export PATH=$PREFIX/bin:$PREFIX/$TARGET/bin:/bin:/usr/bin
-    export LD_LIBRARY_PATH=$PREFIX/$TARGET/lib
-    export LDFLAGS=-L$PREFIX/$TARGET/lib
-    export OBJDUMP=$PREFIX/bin/mingw32-objdump
-    export HOST_CC=/usr/bin/gcc
+    export CC='/usr/local/mingw32/bin/mingw32-gcc'
+    export CXX='/usr/local/mingw32/bin/mingw32-g++'
+    export AR='/usr/local/mingw32/bin/mingw32-ar'
+    export RANLIB='/usr/local/mingw32/bin/mingw32-ranlib'
+    export PKGCONFIG="PKG_CONFIG_PATH=/usr/local/mingw32/lib/pkgconfig pkg-config"
     export OBJSUFFIX=".obj"
     export PROGSUFFIX=".exe"
+    export PREFIX="/usr/local/mingw32"
+}
+
+pyqt5-env() {
+    export PATH=/usr/local/pyqt5/bin:$PATH
+    export PYTHONPATH=/usr/local/pyqt5/lib/python2.7/site-packages:$PYTHONPATH
+}
+
+pyqt4-env() {
+    export PATH=${PATH:gs+/usr/local/pyqt5/bin++}
+    export PYTHONPATH=${PYTHONPATH:gs+/usr/local/pyqt5/lib/python2.7/site-packages++}
 }
 
 # Display an image from a webcam on the N900
@@ -329,29 +458,37 @@ if [[ $HOST == "echo" || $HOST == "mega" ]]; then
 fi
 
 # Hadassa Group development
+export DCMDICTPATH=/usr/local/lib/dicom.dic
 
 export GDK_USE_XFT=1
-export TEXINPUTS=.:/usr/local/share/texmf/tex//:/usr/share/texmf/tex//::/usr/share/texmf/texlive//
-export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/usr/local/share/pkgconfig
 export CVS_RSH=ssh
 export ALGLIBS=/home/dov/orbotech/alglibs
 export SVN_EDITOR=vim
-export PYTHONPATH=/usr/local/lib/python2.7/site-packages:/usr/local/lib64/python2.7/site-packages:
+export PYTHONPATH=/usr/local/lib/python2.7/site-packages:/usr/local/lib64/python2.7/site-packages:/home/dov/Experiments/ExtLib
 #export _JAVA_OPTIONS="-Dawt.useSystemAAFontSettings=on"
+export POEFONTPATH=/home/dov/lib/psfonts
+export HALCONROOT=/usr/local/halcon
+unset SSH_ASKPASS
 alias mntsec='sudo /sbin/modprobe cryptoloop; sudo /sbin/modprobe blowfish; sudo losetup -e blowfish /dev/loop0 /space1/secure; sudo mount -t ext2 /dev/loop0 /mnt/loop'
 alias umntsec='sudo umount /dev/loop0; sudo losetup -d /dev/loop0; sudo sync'
+alias arduino="env _JAVA_OPTIONS='-Dawt.useSystemAAFontSettings=gasp' arduino"
 setenv PERLVER `perl -MConfig -e 'print $Config{version}'`
 setenv PERLOS `perl -MConfig -e 'print $Config{archname}'`
 setenv PERL5LIB /usr/local/lib/perl5/${PERLVER}:/usr/local/lib/perl5/${PERLVER}/${PERLOS}:/usr/local/lib/perl5/site_perl/${PERLVER}:/usr/local/lib/perl5/site_perl/${PERLVER}/${PERLOS}:/usr/local.local/lib/perl5/${PERLVER}:/usr/local.local/lib/perl5/${PERLVER}/${PERLOS}:/usr/local.local/lib/perl5/site_perl/${PERLVER}:/usr/local.local/lib/perl5/site_perl/${PERLVER}/${PERLOS}:/usr/lib/perl5/vendor_perl/${PERLVER}:/usr/lib/vendor_perl/${PERLVER}/${PERLOS}:/usr/lib/vendor_perl/perl5/site_perl/${PERLVER}:/usr/lib/vendor_perl/perl5/site_perl/${PERLVER}/${PERLOS}:/nmr/dov/Projects/Lib/perl:/nmr/dov/Projects/Lib/perl/$OS/$PERLVER
 export LESSCHARSET=utf-8
-
-# Configure with debugging
-alias configuredebug='env CPPFLAGS=-DDEBUG CFLAGS="-g -O0" CXXFLAGS="-g -O0" ./configure'
-
+export XJETQTVERSION=QT5
+export GOPATH=~/go
+export MJRP=XjetApps/MetalJet/Apps/Project/qt
+export MJQT=/home/dov/git/SolarJet/$MJRP
 # Make perl stop complaining
 unset LANG
 setenv LC_ALL_C
 
+# Cuda
+export CUDA_SDK_ROOT_DIR=/usr/local/cuda-7.5
+export PATH=${CUDA_SDK_ROOT_DIR}/bin:$PATH
+export CUDA_NVCC_FLAGS='-ccbin=/usr/local/gcc-5.4.0/bin/g++'
 
 #. /home/dov/lib/zsh/mouse.zsh
 #zle-toggle-mouse
@@ -361,13 +498,54 @@ alias aaaa="setxkbmap en_US"
 alias dvorak="xkbcomp ~/.xkbmap $DISPLAY"
 
 alias samiam=/usr/local/samiam/runsamiam 
-export ANDROID_EMULATOR_FORCE_32BIT=1
-export PATH=/space/android-sdk-linux_x86/platform-tools:$PATH
+#export ANDROID_EMULATOR_FORCE_32BIT=1
+export ANDROID_HOME=/space/Android/Sdk
+export PATH=$ANDROID_HOME/platform-tools:$PATH
 
-function -K adblist { reply=(`adb shell ls -Fd $1\*|adblsf`) } 
-compctl -K adblist adb
+# xjet
+export QTDIR=/usr
+export QMAKE=qmake-qt5
+export QTWEBENGINE_REMOTE_DEBUGGING=7979
+export PE_HOME=/home/dov/git/SolarJet
+export SJQT=${PE_HOME}/XjetApps/MetalJet/Apps/Project/qt/
+alias svn2git="rsync -av --exclude='*.dll' --exclude='*.vcproj' --exclude='.svn' --exclude='*db' --exclude='*.obj' --include='*.cpp' --include='*.h' /mnt/fdrive/svn/Projects/* ."
+alias machine64bit='rdesktop-vrdp -x l -u "xjetdom\\machine" -p 123456 -g1024x768 machine64bit'
+alias printer2='rdesktop-vrdp -x l -u machine -p 123456 -g1024x768 printer2'
+alias minijet2='rdesktop-vrdp -x l -u minijet6 -p 123456 -g1280x1024 172.16.10.40'
+alias minijet5='rdesktop-vrdp -x l -u "xjetdom\\lab" -p 123456 -g1280x1024 minijet-5'
+alias mount-minijet6='mount //minijet6/D\$ -o user='xjetdom\machine',password=123456 /mnt/minijet6'
+alias electronics-lab=' rdesktop -x 0x80 -u 'XJETDOM\\\\lab' -p 123456 -g1680x1050 172.16.10.170'
+alias automatica='rdesktop-vrdp -u machine -p 123456 -g1024x768 automatica'
+export PRINTER=Samsung-SCX-5530FN
+alias mj7='rdesktop-vrdp -x l -u 'xjetdom\\\\machine' -p 123456 -g1600x1020 172.16.10.138'
+#alias hydra='rdesktop-vrdp -x l -u 'xjetdom\\\\machine' -p Amag432\! -g1600x1020 hydra'
+alias hydra='xfreerdp /cert-ignore /w:1600 /h:1020 /v:hydra /u:machine /p:Amag432\! +decorations +wallpaper +clipboard'
+machinerdp () {
+  xfreerdp /cert-ignore /w:1600 /h:1020 /v:$1 /u:machine /p:Amag432\! +decorations +wallpaper +clipboard
+}
+dovrdp () {
+  xfreerdp /cert-ignore /w:1600 /h:1020 /v:$1 /u:dovg /p:Toco43Nika +decorations +wallpaper +clipboard
+}
+machine-rdesktop () {
+    rdesktop -u machine -p Amag432\! -g 1600x1020 $1
+}
 
-# Go support
-export GOPATH=~/go
-export PATH=$PATH:$GOPATH/bin
+alias alpha='xfreerdp /cert-ignore /w:1600 /h:1020 /v:alpha /u:machine /p:Amag432\! +decorations +wallpaper +clipboard'
+alias hydra-rdesktop='rdesktop-vrdp -x l -u "xjetdom\\machine" -p 123456 -g1600x1020 hydra'
+alias strobe='xfreerdp /w:1600 /h:1020 /v:172.16.10.193 /u:machine /p:Amag432\! +decorations +wallpaper +clipboard'
+autoload -U compinit && compinit
+hash -d mjqt=/home/dov/git/SolarJet/XjetApps/MetalJet/Apps/Project/qt
+alias mjqt='cd ~mjqt'
+alias tmux='tmux -u'
 
+PERL5LIB="/home/dov/perl5/lib/perl5${PERL5LIB+:}${PERL5LIB}"; export PERL5LIB;
+PERL_LOCAL_LIB_ROOT="/home/dov/perl5${PERL_LOCAL_LIB_ROOT+:}${PERL_LOCAL_LIB_ROOT}"; export PERL_LOCAL_LIB_ROOT;
+PERL_MB_OPT="--install_base \"/home/dov/perl5\""; export PERL_MB_OPT;
+PERL_MM_OPT="INSTALL_BASE=/home/dov/perl5"; export PERL_MM_OPT;
+
+machinemount () {
+  sudo mount $1 $2 -o user=machine,domain=xjetdom,password='Amag432!',vers=2.1
+}
+
+# Get around warning "Couldn't register with accessibility bus"
+export NO_AT_BRIDGE=1
