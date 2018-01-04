@@ -1,8 +1,10 @@
 # Oh my 
+DISABLE_AUTO_UPDATE="true" 
 export ZSH=/home/dov/git/dov-env/zsh/oh-my-zsh
 plugins=(git)
 DISABLE_AUTO_TITLE="true"
 source $ZSH/oh-my-zsh.sh
+CASE_SENSITIVE="true"
 
 # settings
 setopt extendedglob autolist listtypes
@@ -26,14 +28,12 @@ setenv() { export $1=$2 }  # csh compatibility
 
 if [[ $TERM == "xterm" || $TERM == "xterm-256color" || $TERM == "rxvt" || $TERM == "screen" ]]; then
     # Change title when switching directories
-#    chpwd () { print -Pn "]0;<Z> $USER@$HOST: [%~]" }
-    chpwd () { print -Pn "]0;<Z> $USER@$HOST: [%~]" }
+    chpwd () { print -Pn "\e]0;(Z) $USER@$HOST: [%~]\a" }
     PROMPT="> "
-    PS1="> "
     alias ls="ls -F --color=auto"
-elif [[ $TERM == "screen-256color"  ]]; then
-    # Change title when switching directories
-    chpwd () { print -Pn "\ePtmux;\e\e]0;<Z> $USER@$HOST: [%~]\a\e\\" }
+elif [[ $TERM == "screen-256color" ]]; then
+#    chpwd () { print -Pn "\e]0;<Z> $USER@$HOST: [%~]\a" }
+     chpwd () { print -Pn "\ePtmux;\e\e]0;(Z) $USER@$HOST: [%~]\a\e\\" }
     PROMPT="> "
     alias ls="ls -F --color=auto"
 elif [[ -n $INSIDE_EMACS ]]; then
@@ -220,6 +220,9 @@ fi
 
 palmemo () { install-memo /dev/ttyb -c Misc $* }
 
+# tmux
+tmux-title () { printf "\033k${1}\033\\" }
+
 # functions
 manm () { nroff -man $* | less }
 mp () { export TEXFONTS=/data/alg/local/teTeX/texmf/fonts/tfm/public/cm;
@@ -296,6 +299,9 @@ rot90() { jpegtran -rotate 90 $1 > $1.tmp; mv $1.tmp $1 }
 
 # transfer routines
 toxfer() { scp $* imagic.weizmann.ac.il:~dov/public_html/xfer }
+
+# misc functions
+xdump() { xxd -g 1 $* | less }
 
 # Create widgets from functions that we want to bind
 zle -N copy-last-to-whitespace
@@ -422,24 +428,22 @@ gtk210-env() {
     export PATH=/opt/gtk-2.10/bin:$PATH
 }
 mingw32env() {
-    export CC='/usr/local/mingw32/bin/mingw32-gcc'
-    export CXX='/usr/local/mingw32/bin/mingw32-g++'
-    export AR='/usr/local/mingw32/bin/mingw32-ar'
-    export RANLIB='/usr/local/mingw32/bin/mingw32-ranlib'
-    export PKGCONFIG="PKG_CONFIG_PATH=/usr/local/mingw32/lib/pkgconfig pkg-config"
+    TARGET=mingw32
+    export PREFIX="/usr/local/mingw32"
+    export CC="i686-w64-mingw32-gcc -mms-bitfields"
+    export CXX="i686-w64-mingw32-g++ -mms-bitfields"
+    export AR=i686-w64-mingw32-ar
+    export RANLIB=i686-w64-mingw32-ranlib
+    export CFLAGS="-O2 -march=i586 -mms-bitfields"
+    export CXXFLAGS="-O2 -march=i586 -mms-bitfields"
+    export PKG_CONFIG_PATH=$PREFIX/$TARGET/lib/pkgconfig
+    export PATH=$PREFIX/bin:$PREFIX/$TARGET/bin:/bin:/usr/bin
+    export LD_LIBRARY_PATH=$PREFIX/$TARGET/lib
+    export LDFLAGS=-L$PREFIX/$TARGET/lib
+    export OBJDUMP=$PREFIX/bin/mingw32-objdump
+    export HOST_CC=/usr/bin/gcc
     export OBJSUFFIX=".obj"
     export PROGSUFFIX=".exe"
-    export PREFIX="/usr/local/mingw32"
-}
-
-pyqt5-env() {
-    export PATH=/usr/local/pyqt5/bin:$PATH
-    export PYTHONPATH=/usr/local/pyqt5/lib/python2.7/site-packages:$PYTHONPATH
-}
-
-pyqt4-env() {
-    export PATH=${PATH:gs+/usr/local/pyqt5/bin++}
-    export PYTHONPATH=${PYTHONPATH:gs+/usr/local/pyqt5/lib/python2.7/site-packages++}
 }
 
 # Display an image from a webcam on the N900
@@ -472,13 +476,14 @@ export HALCONROOT=/usr/local/halcon
 unset SSH_ASKPASS
 alias mntsec='sudo /sbin/modprobe cryptoloop; sudo /sbin/modprobe blowfish; sudo losetup -e blowfish /dev/loop0 /space1/secure; sudo mount -t ext2 /dev/loop0 /mnt/loop'
 alias umntsec='sudo umount /dev/loop0; sudo losetup -d /dev/loop0; sudo sync'
-alias arduino="env _JAVA_OPTIONS='-Dawt.useSystemAAFontSettings=gasp' arduino"
+alias android-studio='/space/android-studio/bin/studio.sh'
 setenv PERLVER `perl -MConfig -e 'print $Config{version}'`
 setenv PERLOS `perl -MConfig -e 'print $Config{archname}'`
 setenv PERL5LIB /usr/local/lib/perl5/${PERLVER}:/usr/local/lib/perl5/${PERLVER}/${PERLOS}:/usr/local/lib/perl5/site_perl/${PERLVER}:/usr/local/lib/perl5/site_perl/${PERLVER}/${PERLOS}:/usr/local.local/lib/perl5/${PERLVER}:/usr/local.local/lib/perl5/${PERLVER}/${PERLOS}:/usr/local.local/lib/perl5/site_perl/${PERLVER}:/usr/local.local/lib/perl5/site_perl/${PERLVER}/${PERLOS}:/usr/lib/perl5/vendor_perl/${PERLVER}:/usr/lib/vendor_perl/${PERLVER}/${PERLOS}:/usr/lib/vendor_perl/perl5/site_perl/${PERLVER}:/usr/lib/vendor_perl/perl5/site_perl/${PERLVER}/${PERLOS}:/nmr/dov/Projects/Lib/perl:/nmr/dov/Projects/Lib/perl/$OS/$PERLVER
 export LESSCHARSET=utf-8
-export XJETQTVERSION=QT5
-export GOPATH=~/go
+export CUDA_SDK_PATH=/usr/local/cuda-8.0
+export PATH=$CUDA_SDK_PATH/bin:$PATH
+export CUDA_NVCC_FLAGS=-ccbin=/usr/local/gcc-5.4.0/bin/g++
 export MJRP=XjetApps/MetalJet/Apps/Project/qt
 export MJQT=/home/dov/git/SolarJet/$MJRP
 # Make perl stop complaining
@@ -490,17 +495,20 @@ export CUDA_SDK_ROOT_DIR=/usr/local/cuda-7.5
 export PATH=${CUDA_SDK_ROOT_DIR}/bin:$PATH
 export CUDA_NVCC_FLAGS='-ccbin=/usr/local/gcc-5.4.0/bin/g++'
 
+# This should be the default for all cuda calculations...
+export PYCUDA_DEFAULT_NVCC_FLAGS=--std=c++11
+
 #. /home/dov/lib/zsh/mouse.zsh
 #zle-toggle-mouse
 #<Esc>m to toggle the mouse in emacs mode
 #bindkey -M emacs '\em' zle-toggle-mouse
 alias aaaa="setxkbmap en_US"
 alias dvorak="xkbcomp ~/.xkbmap $DISPLAY"
-
 alias samiam=/usr/local/samiam/runsamiam 
 #export ANDROID_EMULATOR_FORCE_32BIT=1
 export ANDROID_HOME=/space/Android/Sdk
 export PATH=$ANDROID_HOME/platform-tools:$PATH
+export GRADLE_USER_HOME=/space/dov/.gradle
 
 # xjet
 export QTDIR=/usr
